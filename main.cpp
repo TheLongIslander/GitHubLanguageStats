@@ -26,20 +26,28 @@ int main() {
     fs::path base_clone_dir = temp_base / ("github_clones_" + generateRandomSuffix());
     fs::create_directories(base_clone_dir);
 
-    for (const auto& repo : repos)
-        if (!repo["fork"].get<bool>())
+    for (json::const_iterator it = repos.begin(); it != repos.end(); ++it) {
+        const json& repo = *it;
+        if (!repo["fork"].get<bool>()) {
             cloneQueue.push(repo);
+        }
+    }
 
     unsigned int threads = std::thread::hardware_concurrency();
-    std::vector<std::thread> clonePool, analyzePool;
+    std::vector<std::thread> clonePool;
+    std::vector<std::thread> analyzePool;
 
-    for (unsigned int i = 0; i < threads; ++i)
-        analyzePool.emplace_back(analyzeWorker);
+    for (unsigned int i = 0; i < threads; ++i) {
+        analyzePool.push_back(std::thread(analyzeWorker));
+    }
 
-    for (unsigned int i = 0; i < threads; ++i)
-        clonePool.emplace_back(cloneWorker, std::ref(base_clone_dir), std::ref(token_or_username), using_token);
+    for (unsigned int i = 0; i < threads; ++i) {
+        clonePool.push_back(std::thread(cloneWorker, std::ref(base_clone_dir), std::ref(token_or_username), using_token));
+    }
 
-    for (auto& t : clonePool) t.join();
+    for (std::vector<std::thread>::iterator it = clonePool.begin(); it != clonePool.end(); ++it) {
+        it->join();
+    }
 
     {
         std::lock_guard<std::mutex> lock(analyze_mutex);
@@ -47,20 +55,27 @@ int main() {
         analyze_cv.notify_all();
     }
 
-    for (auto& t : analyzePool) t.join();
+    for (std::vector<std::thread>::iterator it = analyzePool.begin(); it != analyzePool.end(); ++it) {
+        it->join();
+    }
 
     int total = 0;
-    for (const auto& [_, lines] : lang_totals)
-        total += lines;
+    for (std::unordered_map<std::string, int>::const_iterator it = lang_totals.begin(); it != lang_totals.end(); ++it) {
+        total += it->second;
+    }
 
     std::cout << "\nLanguage Breakdown (by lines of code):\n";
-    for (const auto& [lang, lines] : lang_totals)
+    for (std::unordered_map<std::string, int>::const_iterator it = lang_totals.begin(); it != lang_totals.end(); ++it) {
+        const std::string& lang = it->first;
+        int lines = it->second;
         printf("%-20s : %6.2f%% (%d lines)\n", lang.c_str(), (100.0 * lines) / total, lines);
+    }
 
     std::error_code ec;
     fs::remove_all(base_clone_dir, ec);
-    if (ec)
+    if (ec) {
         std::cerr << "Failed to delete temp dir: " << ec.message() << "\n";
+    }
 
     git_libgit2_shutdown();
     return 0;

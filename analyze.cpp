@@ -23,11 +23,14 @@ json runClocAndParse(const std::string& path) {
 
     std::ostringstream output;
     char buffer[256];
-    while (fgets(buffer, sizeof(buffer), pipe)) output << buffer;
+    while (fgets(buffer, sizeof(buffer), pipe)) {
+        output << buffer;
+    }
     pclose(pipe);
 
     std::string out = output.str();
-    size_t start = out.find('{'), end = out.rfind('}');
+    size_t start = out.find('{');
+    size_t end = out.rfind('}');
     if (start == std::string::npos || end == std::string::npos) return {};
 
     try {
@@ -54,16 +57,20 @@ void analyzeWorker() {
         lock.unlock();
 
         {
-            std::lock_guard<std::mutex> lock(cout_mutex);
+            std::lock_guard<std::mutex> coutLock(cout_mutex);
             std::cout << "Analyzing: " << path << "\n";
         }
 
         json cloc_data = runClocAndParse(path);
         if (!cloc_data.is_object()) continue;
 
-        std::lock_guard<std::mutex> lock2(lang_mutex);
-        for (auto& [lang, stats] : cloc_data.items()) {
+        std::lock_guard<std::mutex> langLock(lang_mutex);
+        for (nlohmann::json::iterator it = cloc_data.begin(); it != cloc_data.end(); ++it) {
+            const std::string& lang = it.key();
+            const nlohmann::json& stats = it.value();
+
             if (lang == "header" || lang == "SUM") continue;
+
             lang_totals[lang] += stats["code"].get<int>();
         }
     }
