@@ -1,11 +1,12 @@
-#include "clone.hpp"
-#include "globals.hpp"
-
 #include <git2.h>
 #include <mutex>
 #include <iostream>
 #include <queue>
 #include <condition_variable>
+
+#include "clone.hpp"
+#include "globals.hpp"
+
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;

@@ -1,5 +1,6 @@
-#include "utils.hpp"
 #include <random>
+
+#include "utils.hpp"
 
 std::string generateRandomSuffix(std::size_t length) {
     const char charset[] = "abcdefghijklmnopqrstuvwxyz0123456789";

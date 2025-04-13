@@ -1,32 +1,36 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -I/usr/local/opt/libgit2/include
+CXXFLAGS = -std=c++17 -Wall -Wextra -Ih -I/usr/local/opt/libgit2/include
 
 # Linker flags
 LDFLAGS = -L/usr/local/opt/libgit2/lib -lcurl -lgit2
 
-# Source files
-SRC = main.cpp auth.cpp clone.cpp analyze.cpp utils.cpp globals.cpp
-OBJ = $(SRC:.cpp=.o)
+# Directories
+SRC_DIR = src
+BIN_DIR = bin
 
-# Output executable
-TARGET = github_stats
+# Sources and objects
+SRC = $(wildcard $(SRC_DIR)/*.cpp)
+OBJ = $(patsubst $(SRC_DIR)/%.cpp, $(BIN_DIR)/%.o, $(SRC))
+TARGET = $(BIN_DIR)/github_stats
 
 # Default target
 all: $(TARGET)
 
 # Link object files into executable
 $(TARGET): $(OBJ)
+	@mkdir -p $(BIN_DIR)
 	$(CXX) $(OBJ) $(LDFLAGS) -o $@
 
 # Compile .cpp to .o
-%.o: %.cpp
+$(BIN_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Clean build artifacts
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -rf $(BIN_DIR)
 
-# Run the program
+# Run
 run: all
 	./$(TARGET)

@@ -1,5 +1,3 @@
-#include "analyze.hpp"
-#include "globals.hpp"
 #include <iostream>
 #include <cstdio>
 #include <mutex>
@@ -7,6 +5,9 @@
 #include <sstream>
 #include <filesystem>
 #include <condition_variable>
+
+#include "analyze.hpp"
+#include "globals.hpp"
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
