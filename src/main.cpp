@@ -3,6 +3,7 @@
 #include <thread>
 #include <vector>
 #include <string>
+#include <chrono>
 #include <nlohmann/json.hpp>
 #include <git2.h>
 
@@ -21,6 +22,9 @@ int main() {
     std::string token_or_username;
     bool using_token = false;
     json repos = promptAndFetchRepos(token_or_username, using_token);
+    
+    // Start measuring time after fetching repos
+    auto start = std::chrono::steady_clock::now();
 
     fs::path temp_base = fs::temp_directory_path();
     fs::path base_clone_dir = temp_base / ("github_clones_" + generateRandomSuffix());
@@ -76,6 +80,11 @@ int main() {
     if (ec) {
         std::cerr << "Failed to delete temp dir: " << ec.message() << "\n";
     }
+    // End measuring time
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+
+    std::cout << "\nTotal runtime (post-auth to exit): " << elapsed.count() << " seconds\n";
 
     git_libgit2_shutdown();
     return 0;

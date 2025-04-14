@@ -5,6 +5,7 @@
 #include <sstream>
 #include <filesystem>
 #include <condition_variable>
+#include <unordered_map>
 
 #include "analyze.hpp"
 #include "globals.hpp"
@@ -12,12 +13,24 @@
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
+// Run cloc with internal parallelism enabled via --processes=N
 json runClocAndParse(const std::string& path) {
-    std::string cmd = "cloc --json --quiet "
-                      "--exclude-lang=Text,JSON,CSV "
-                      "--exclude-dir=node_modules,dist,build,vendor,.git "
-                      "--not-match-d=.*\\.d\\.ts$ "
-                      "\"" + path + "\" 2>/dev/null";
+    std::string cmd = "cloc --json --quiet ";
+
+#ifdef __unix__
+    unsigned int n_cores = std::thread::hardware_concurrency();
+    if (n_cores == 0) n_cores = 2;
+    cmd += "--processes=" + std::to_string(n_cores) + " ";
+#endif
+
+    cmd += "--exclude-lang=Text,JSON,CSV "
+           "--exclude-dir=node_modules,dist,build,vendor,.git "
+           "--not-match-d=.*\\.d\\.ts$ "
+           "\"" + path + "\"";
+
+#ifndef _WIN32
+    cmd += " 2>/dev/null"; // Suppress stderr on Unix
+#endif
 
     FILE* pipe = popen(cmd.c_str(), "r");
     if (!pipe) return {};
@@ -65,14 +78,22 @@ void analyzeWorker() {
         json cloc_data = runClocAndParse(path);
         if (!cloc_data.is_object()) continue;
 
-        std::lock_guard<std::mutex> langLock(lang_mutex);
-        for (nlohmann::json::iterator it = cloc_data.begin(); it != cloc_data.end(); ++it) {
-            const std::string& lang = it.key();
-            const nlohmann::json& stats = it.value();
+        std::unordered_map<std::string, int> local_totals;
 
+        for (auto it = cloc_data.begin(); it != cloc_data.end(); ++it) {
+            const std::string& lang = it.key();
             if (lang == "header" || lang == "SUM") continue;
 
-            lang_totals[lang] += stats["code"].get<int>();
+            const json& stats = it.value();
+            if (stats.contains("code")) {
+                local_totals[lang] += stats["code"].get<int>();
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> langLock(lang_mutex);
+            for (const auto& [lang, lines] : local_totals)
+                lang_totals[lang] += lines;
         }
     }
 }
