@@ -15,34 +15,48 @@ using json = nlohmann::json;
 
 // Run cloc with internal parallelism enabled via --processes=N
 json runClocAndParse(const std::string& path) {
-    std::string cmd = "cloc --json --quiet ";
+    auto runCloc = [&](bool use_parallel) -> std::string {
+        std::string cmd = "cloc --json --quiet ";
 
 #ifdef __unix__
-    unsigned int n_cores = std::thread::hardware_concurrency();
-    if (n_cores == 0) n_cores = 2;
-    cmd += "--processes=" + std::to_string(n_cores) + " ";
+        if (use_parallel) {
+            unsigned int n_cores = std::thread::hardware_concurrency();
+            if (n_cores == 0) n_cores = 2;
+            cmd += "--processes=" + std::to_string(n_cores) + " ";
+        }
 #endif
 
-    cmd += "--exclude-lang=Text,JSON,CSV "
-           "--exclude-dir=node_modules,dist,build,vendor,.git "
-           "--not-match-d=.*\\.d\\.ts$ "
-           "\"" + path + "\"";
+        cmd += "--exclude-lang=Text,JSON,CSV "
+               "--exclude-dir=node_modules,dist,build,vendor,.git "
+               "--not-match-d=.*\\.d\\.ts$ "
+               "\"" + path + "\"";
 
 #ifndef _WIN32
-    cmd += " 2>/dev/null"; // Suppress stderr on Unix
+        cmd += " 2>&1"; // Capture stderr too
 #endif
 
-    FILE* pipe = popen(cmd.c_str(), "r");
-    if (!pipe) return {};
+        FILE* pipe = popen(cmd.c_str(), "r");
+        if (!pipe) return "";
 
-    std::ostringstream output;
-    char buffer[256];
-    while (fgets(buffer, sizeof(buffer), pipe)) {
-        output << buffer;
+        std::ostringstream output;
+        char buffer[256];
+        while (fgets(buffer, sizeof(buffer), pipe)) {
+            output << buffer;
+        }
+        pclose(pipe);
+
+        return output.str();
+    };
+
+    // First attempt: with --processes if on UNIX
+    std::string out = runCloc(true);
+
+    // Fallback if error occurred
+    if (out.find("Parallel::ForkManager") != std::string::npos ||
+        out.find("Can't locate Parallel/ForkManager.pm") != std::string::npos) {
+        out = runCloc(false);
     }
-    pclose(pipe);
 
-    std::string out = output.str();
     size_t start = out.find('{');
     size_t end = out.rfind('}');
     if (start == std::string::npos || end == std::string::npos) return {};
@@ -53,6 +67,7 @@ json runClocAndParse(const std::string& path) {
         return {};
     }
 }
+
 
 void analyzeWorker() {
     while (true) {
