@@ -12,6 +12,7 @@
 #include "analyze.hpp"
 #include "utils.hpp"
 #include "globals.hpp"
+#include "print_sorted.hpp" 
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -63,24 +64,15 @@ int main() {
         it->join();
     }
 
-    int total = 0;
-    for (std::unordered_map<std::string, int>::const_iterator it = lang_totals.begin(); it != lang_totals.end(); ++it) {
-        total += it->second;
-    }
-
-    std::cout << "\nLanguage Breakdown (by lines of code):\n";
-    for (std::unordered_map<std::string, int>::const_iterator it = lang_totals.begin(); it != lang_totals.end(); ++it) {
-        const std::string& lang = it->first;
-        int lines = it->second;
-        printf("%-20s : %6.2f%% (%d lines)\n", lang.c_str(), (100.0 * lines) / total, lines);
-    }
+    // NEW: Sorted language stats output
+    printSortedLanguageStats(lang_totals);
 
     std::error_code ec;
     fs::remove_all(base_clone_dir, ec);
     if (ec) {
         std::cerr << "Failed to delete temp dir: " << ec.message() << "\n";
     }
-    // End measuring time
+
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end - start;
 
