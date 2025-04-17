@@ -1,7 +1,10 @@
+# Get Homebrew prefix (works on Intel and Apple Silicon)
+BREW_PREFIX := $(shell brew --prefix)
+
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -Ih
-LDFLAGS =
+CXXFLAGS = -std=c++17 -Wall -Wextra -Ih -I$(BREW_PREFIX)/include
+LDFLAGS = -L$(BREW_PREFIX)/lib
 
 # Directories
 SRC_DIR = src
@@ -16,10 +19,10 @@ TARGET = $(BIN_DIR)/github_stats
 PKG_CONFIG := $(shell which pkg-config 2>/dev/null)
 
 ifeq ($(PKG_CONFIG),)
-	$(warning pkg-config not found! You may need to install dependencies manually.)
+$(warning pkg-config not found! You may need to install dependencies manually.)
 else
-	CXXFLAGS += $(shell pkg-config --cflags libgit2 libcurl)
-	LDFLAGS += $(shell pkg-config --libs libgit2 libcurl)
+CXXFLAGS += $(shell pkg-config --cflags libgit2 libcurl)
+LDFLAGS  += $(shell pkg-config --libs libgit2 libcurl)
 endif
 
 # Default target
@@ -35,11 +38,15 @@ $(BIN_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Install dependencies if missing
+# Install dependencies
 deps:
 	@echo "Checking and installing dependencies..."
 	@if [ "$$(uname)" = "Darwin" ]; then \
 		echo "Detected macOS"; \
+		if ! command -v brew >/dev/null 2>&1; then \
+			echo "Homebrew not found. Please install it from https://brew.sh"; \
+			exit 1; \
+		fi; \
 		if ! command -v pkg-config >/dev/null 2>&1; then echo "Installing pkg-config..."; brew install pkg-config; fi; \
 		if ! brew list libgit2 >/dev/null 2>&1; then echo "Installing libgit2..."; brew install libgit2; fi; \
 		if ! brew list curl >/dev/null 2>&1; then echo "Installing curl..."; brew install curl; fi; \
