@@ -41,6 +41,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     resize(1000, 600);
 
     connect(goButton, &QPushButton::clicked, this, &MainWindow::startWorkerThread);
+    connect(inputField, &QLineEdit::returnPressed, this, &MainWindow::startWorkerThread);
+
 }
 
 MainWindow::~MainWindow() {
