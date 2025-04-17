@@ -84,9 +84,15 @@ void analyzeWorker() {
         analyzeQueue.pop();
         lock.unlock();
 
+        std::string repoName = fs::path(path).filename().string();
+
         {
             std::lock_guard<std::mutex> coutLock(cout_mutex);
-            std::cout << "Analyzing: " << path << "\n";
+            std::cout << "Analyzing: " << repoName << std::endl;  // <-- flushes automatically
+        }
+
+        if (logCallback) {
+            logCallback(QString("Analyzing: %1").arg(QString::fromStdString(repoName)));
         }
 
         json cloc_data = runClocAndParse(path);
@@ -106,8 +112,10 @@ void analyzeWorker() {
 
         {
             std::lock_guard<std::mutex> langLock(lang_mutex);
-            for (const std::pair<const std::string, int>& entry : local_totals)
+            for (const auto& entry : local_totals)
                 lang_totals[entry.first] += entry.second;
         }
     }
 }
+
+

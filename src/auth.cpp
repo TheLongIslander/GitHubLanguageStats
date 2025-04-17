@@ -1,6 +1,5 @@
 #include <iostream>
 #include <curl/curl.h>
-
 #include "auth.hpp"
 
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
@@ -44,6 +43,26 @@ std::string fetchRepos(const std::string& identifier, bool using_token) {
 json promptAndFetchRepos(std::string& identifier, bool& using_token) {
     json repos;
 
+    // ✅ Skip prompt if identifier is already provided (e.g., from GUI)
+    if (!identifier.empty()) {
+        using_token = identifier.length() > 30; // crude check
+        std::string response = fetchRepos(identifier, using_token);
+
+        try {
+            repos = json::parse(response);
+            if (!repos.is_array()) {
+                std::cerr << "GitHub API error: " << (repos.contains("message") ? repos["message"] : "Unexpected format") << "\n";
+                return {};
+            }
+        } catch (...) {
+            std::cerr << "Failed to parse GitHub API response.\n";
+            return {};
+        }
+
+        return repos;
+    }
+
+    // 👇 If GUI didn't set it, fallback to terminal prompt (for --nogui mode)
     while (true) {
         std::string input;
         std::cout << "Enter GitHub token (or press Enter to use public username): ";
@@ -59,8 +78,6 @@ json promptAndFetchRepos(std::string& identifier, bool& using_token) {
         }
 
         std::string response = fetchRepos(identifier, using_token);
-        std::cout << "RAW API RESPONSE:\n" << response << "\n";
-
         try {
             repos = json::parse(response);
             if (repos.is_array()) break;

@@ -1,0 +1,5 @@
+/Users/adityaraj/Downloads/GitHubLangStats/build/CMakeFiles/GitHubLangStats.dir
+/Users/adityaraj/Downloads/GitHubLangStats/build/CMakeFiles/edit_cache.dir
+/Users/adityaraj/Downloads/GitHubLangStats/build/CMakeFiles/rebuild_cache.dir
+/Users/adityaraj/Downloads/GitHubLangStats/build/CMakeFiles/GitHubLangStats_autogen_timestamp_deps.dir
+/Users/adityaraj/Downloads/GitHubLangStats/build/CMakeFiles/GitHubLangStats_autogen.dir

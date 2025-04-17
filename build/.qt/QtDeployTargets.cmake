@@ -1,0 +1,2 @@
+set(__QT_DEPLOY_TARGET_GitHubLangStats_FILE /Users/adityaraj/Downloads/GitHubLangStats/build/GitHubLangStats)
+set(__QT_DEPLOY_TARGET_GitHubLangStats_TYPE EXECUTABLE)

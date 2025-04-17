@@ -11,3 +11,5 @@ bool cloning_done = false;
 std::unordered_map<std::string, int> lang_totals;
 std::queue<nlohmann::json> cloneQueue;
 std::queue<std::string> analyzeQueue;
+
+std::function<void(const QString&)> logCallback = nullptr;

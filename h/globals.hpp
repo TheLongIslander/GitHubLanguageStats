@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <condition_variable>
 #include <nlohmann/json.hpp>
+#include <QString>
+#include <functional>
 
 extern std::mutex lang_mutex;
 extern std::mutex clone_mutex;
@@ -19,5 +21,7 @@ extern bool cloning_done;
 extern std::unordered_map<std::string, int> lang_totals;
 extern std::queue<nlohmann::json> cloneQueue;
 extern std::queue<std::string> analyzeQueue;
+
+extern std::function<void(const QString&)> logCallback;
 
 #endif // GLOBALS_HPP
