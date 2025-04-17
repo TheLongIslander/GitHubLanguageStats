@@ -15,7 +15,7 @@ using json = nlohmann::json;
 
 // Run cloc with internal parallelism enabled via --processes=N
 json runClocAndParse(const std::string& path) {
-    auto runCloc = [&](bool use_parallel) -> std::string {
+    std::function<std::string(bool)> runCloc = [&](bool use_parallel) -> std::string {
         std::string cmd = "cloc --json --quiet ";
 
 #ifdef __unix__
@@ -68,7 +68,6 @@ json runClocAndParse(const std::string& path) {
     }
 }
 
-
 void analyzeWorker() {
     while (true) {
         std::unique_lock<std::mutex> lock(analyze_mutex);
@@ -95,7 +94,7 @@ void analyzeWorker() {
 
         std::unordered_map<std::string, int> local_totals;
 
-        for (auto it = cloc_data.begin(); it != cloc_data.end(); ++it) {
+        for (json::iterator it = cloc_data.begin(); it != cloc_data.end(); ++it) {
             const std::string& lang = it.key();
             if (lang == "header" || lang == "SUM") continue;
 
@@ -107,8 +106,8 @@ void analyzeWorker() {
 
         {
             std::lock_guard<std::mutex> langLock(lang_mutex);
-            for (const auto& [lang, lines] : local_totals)
-                lang_totals[lang] += lines;
+            for (const std::pair<const std::string, int>& entry : local_totals)
+                lang_totals[entry.first] += entry.second;
         }
     }
 }

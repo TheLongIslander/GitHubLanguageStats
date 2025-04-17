@@ -25,7 +25,7 @@ int main() {
     json repos = promptAndFetchRepos(token_or_username, using_token);
     
     // Start measuring time after fetching repos
-    auto start = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     fs::path temp_base = fs::temp_directory_path();
     fs::path base_clone_dir = temp_base / ("github_clones_" + generateRandomSuffix());
@@ -43,11 +43,13 @@ int main() {
     std::vector<std::thread> analyzePool;
 
     for (unsigned int i = 0; i < threads; ++i) {
-        analyzePool.push_back(std::thread(analyzeWorker));
+        std::thread t(analyzeWorker);
+        analyzePool.push_back(std::move(t));
     }
 
     for (unsigned int i = 0; i < threads; ++i) {
-        clonePool.push_back(std::thread(cloneWorker, std::ref(base_clone_dir), std::ref(token_or_username), using_token));
+        std::thread t(cloneWorker, std::ref(base_clone_dir), std::ref(token_or_username), using_token);
+        clonePool.push_back(std::move(t));
     }
 
     for (std::vector<std::thread>::iterator it = clonePool.begin(); it != clonePool.end(); ++it) {
@@ -73,7 +75,7 @@ int main() {
         std::cerr << "Failed to delete temp dir: " << ec.message() << "\n";
     }
 
-    auto end = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::duration<double> elapsed = end - start;
 
     std::cout << "\nTotal runtime (post-auth to exit): " << elapsed.count() << " seconds\n";

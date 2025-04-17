@@ -3,8 +3,8 @@ BREW_PREFIX := $(shell brew --prefix)
 
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -Ih -I$(BREW_PREFIX)/include
-LDFLAGS = -L$(BREW_PREFIX)/lib
+CXXFLAGS = -std=c++17 -Wall -Wextra -O3 -march=native -flto -Ih -I$(BREW_PREFIX)/include
+LDFLAGS = -L$(BREW_PREFIX)/lib -flto
 
 # Directories
 SRC_DIR = src
