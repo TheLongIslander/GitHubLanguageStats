@@ -3,7 +3,7 @@ BREW_PREFIX := $(shell brew --prefix)
 
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O3 -march=native -flto -Ih -I$(BREW_PREFIX)/include
+CXXFLAGS = -std=c++17 -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -O3 -march=native -flto -Ih -I$(BREW_PREFIX)/include
 LDFLAGS = -L$(BREW_PREFIX)/lib -flto
 
 # Directories
