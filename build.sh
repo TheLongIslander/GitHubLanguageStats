@@ -8,6 +8,19 @@ BLUE="\033[1;34m"
 YELLOW="\033[1;33m"
 RESET="\033[0m"
 
+# Correct dependency names for Homebrew
+DEPENDENCIES=("libgit2" "curl" "nlohmann-json" "qt@6" "cloc")
+
+echo -e "${BLUE}Checking and installing dependencies if needed...${RESET}"
+for dep in "${DEPENDENCIES[@]}"; do
+    if ! brew list --formula | grep -q "^${dep}\$"; then
+        echo -e "${YELLOW}Installing ${dep}...${RESET}"
+        brew install "$dep"
+    else
+        echo -e "${GREEN}${dep} is already installed.${RESET}"
+    fi
+done
+
 BUILD_DIR="build"
 
 echo -e "${BLUE}Entering build directory...${RESET}"
