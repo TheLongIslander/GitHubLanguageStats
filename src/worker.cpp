@@ -27,7 +27,7 @@ void Worker::run() {
 
     json repos = promptAndFetchRepos(token_or_username, using_token);
     std::ostringstream outStream;
-    auto start = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     {
         std::lock_guard<std::mutex> lock1(analyze_mutex);
@@ -47,7 +47,7 @@ void Worker::run() {
     fs::path base_clone_dir = fs::temp_directory_path() / ("github_clones_" + generateRandomSuffix());
     fs::create_directories(base_clone_dir);
 
-    for (const auto& repo : repos) {
+    for (const json& repo : repos) {
         if (!repo["fork"].get<bool>()) {
             emit logMessage("Cloning: " + QString::fromStdString(repo["name"]));
             cloneQueue.push(repo);
@@ -62,7 +62,7 @@ void Worker::run() {
     for (unsigned int i = 0; i < threads; ++i)
         clonePool.emplace_back(cloneWorker, std::ref(base_clone_dir), std::ref(token_or_username), using_token);
 
-    for (auto& t : clonePool) t.join();
+    for (std::thread& t : clonePool) t.join();
 
     {
         std::lock_guard<std::mutex> lock(analyze_mutex);
@@ -70,7 +70,7 @@ void Worker::run() {
         analyze_cv.notify_all();
     }
 
-    for (auto& t : analyzePool) t.join();
+    for (std::thread& t : analyzePool) t.join();
 
     // Disable callback after finishing logging
     logCallback = nullptr;
@@ -81,14 +81,16 @@ void Worker::run() {
     summary << "Language Breakdown (by lines of code):\n";
 
     int total = 0;
-    for (const auto& entry : lang_totals) total += entry.second;
+    for (const std::pair<const std::string, int>& entry : lang_totals) total += entry.second;
 
     std::vector<std::pair<std::string, int>> sorted(lang_totals.begin(), lang_totals.end());
-    std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b) {
+    std::sort(sorted.begin(), sorted.end(), [](const std::pair<std::string, int>& a, const std::pair<std::string, int>& b) {
         return a.second > b.second;
     });
 
-    for (const auto& [lang, lines] : sorted) {
+    for (const std::pair<std::string, int>& entry : sorted) {
+        const std::string& lang = entry.first;
+        int lines = entry.second;
         summary << lang << ": " << (100.0 * lines / total) << "% (" << lines << " lines)\n";
     }
 

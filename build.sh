@@ -13,7 +13,7 @@ DEPENDENCIES=("libgit2" "curl" "nlohmann-json" "qt@6" "cloc")
 
 echo -e "${BLUE}Checking and installing dependencies if needed...${RESET}"
 for dep in "${DEPENDENCIES[@]}"; do
-    if ! brew list --formula | grep -q "^${dep}\$"; then
+    if ! brew list --versions "$dep" > /dev/null 2>&1; then
         echo -e "${YELLOW}Installing ${dep}...${RESET}"
         brew install "$dep"
     else

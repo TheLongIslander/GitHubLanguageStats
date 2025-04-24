@@ -88,7 +88,7 @@ void analyzeWorker() {
 
         {
             std::lock_guard<std::mutex> coutLock(cout_mutex);
-            std::cout << "Analyzing: " << repoName << std::endl;  // <-- flushes automatically
+            std::cout << "Analyzing: " << repoName << std::endl;
         }
 
         if (logCallback) {
@@ -112,7 +112,7 @@ void analyzeWorker() {
 
         {
             std::lock_guard<std::mutex> langLock(lang_mutex);
-            for (const auto& entry : local_totals)
+            for (const std::pair<const std::string, int>& entry : local_totals)
                 lang_totals[entry.first] += entry.second;
         }
     }
