@@ -13,7 +13,6 @@ std::string waitForOAuthCode() {
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
-    char buffer[4096] = {0};
     std::string code;
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -46,23 +45,39 @@ std::string waitForOAuthCode() {
         return "";
     }
 
-    read(new_socket, buffer, sizeof(buffer));
-    std::string request(buffer);
-
-    std::regex code_regex("GET /callback\\?code=([^ ]+)");
-    std::smatch match;
-    if (std::regex_search(request, match, code_regex)) {
-        code = match[1];
+    std::string request;
+    char buffer[1024];
+    ssize_t bytesRead;
+    while ((bytesRead = read(new_socket, buffer, sizeof(buffer) - 1)) > 0) {
+        buffer[bytesRead] = '\0';
+        request += buffer;
+        if (request.find("\r\n\r\n") != std::string::npos)
+            break;
     }
 
-    // Serve static HTML
-    std::ifstream file("login_frontend/success.html");
+    std::regex code_regex("GET /callback\\?code=([^& ]+)");
+    std::regex error_regex("GET /callback\\?error=([^& ]+)");
+    std::smatch match;
+
+    std::string html_file;
+    if (std::regex_search(request, match, code_regex)) {
+        code = match[1];
+        html_file = "login_frontend/success.html";
+    } else if (std::regex_search(request, match, error_regex)) {
+        std::cerr << "OAuth Error: " << match[1] << "\n";
+        html_file = "login_frontend/error.html";
+    } else {
+        std::cerr << "Invalid OAuth redirect.\n";
+        html_file = "login_frontend/error.html";
+    }
+
+    std::ifstream file(html_file);
     std::stringstream html;
     if (file.is_open()) {
         html << file.rdbuf();
         file.close();
     } else {
-        html << "<html><body><h2>Login successful!</h2><p>But we couldn't load the custom page.</p></body></html>";
+        html << "<html><body><h2>Something went wrong.</h2></body></html>";
     }
 
     std::string response =

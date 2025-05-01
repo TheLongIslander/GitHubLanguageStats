@@ -13,7 +13,7 @@
 #include "utils.hpp"
 #include "globals.hpp"
 #include "print_sorted.hpp"
-#include "pureOAuthServer.hpp"  // For waitForOAuthCode()
+#include "pureOAuthServer.hpp"
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -41,39 +41,51 @@ int runTerminalMode() {
         std::getline(std::cin, option);
 
         if (option == "2") {
-            std::cout << "Opening browser for GitHub login...\n";
-
             std::string clientId = "Ov23liVQ3EBVLbcP681k";
             std::string url = "https://github.com/login/oauth/authorize?client_id=" + clientId +
-                  "&scope=repo&redirect_uri=http://localhost:8000/callback";
+                              "&scope=repo&redirect_uri=http://localhost:8000/callback";
 
+            std::string openCmd;
+            bool canLaunchBrowser = true;
 
 #ifdef __APPLE__
-            std::string openCmd = "open \"" + url + "\"";
+            openCmd = "open \"" + url + "\"";
 #elif __linux__
-            std::string openCmd = "xdg-open \"" + url + "\"";
+            if (system("which xdg-open > /dev/null 2>&1") == 0) {
+                openCmd = "xdg-open \"" + url + "\"";
+            } else {
+                canLaunchBrowser = false;
+            }
 #elif _WIN32
-            std::string openCmd = "start \"\" \"" + url + "\"";
+            openCmd = "start \"\" \"" + url + "\"";
 #else
-#error "Unsupported platform for launching browser."
+            canLaunchBrowser = false;
 #endif
-            system(openCmd.c_str());
 
-            std::string code = waitForOAuthCode();
-            if (code.empty()) {
-                std::cerr << "Failed to get authorization code.\n";
-                return 1;
+            if (!canLaunchBrowser) {
+                std::cerr << "No browser launcher found. Falling back to token/username login.\n";
+                option = "1";
+            } else {
+                std::cout << "Opening browser for GitHub login...\n";
+                system(openCmd.c_str());
+
+                std::string code = waitForOAuthCode();
+                if (code.empty()) {
+                    std::cerr << "Failed to get authorization code.\n";
+                    return 1;
+                }
+
+                token_or_username = exchangeCodeForToken(code);
+                if (token_or_username.empty()) {
+                    std::cerr << "Failed to exchange code for token.\n";
+                    return 1;
+                }
+
+                using_token = true;
             }
+        }
 
-            token_or_username = exchangeCodeForToken(code);
-            if (token_or_username.empty()) {
-                std::cerr << "Failed to exchange code for token.\n";
-                return 1;
-            }
-
-            using_token = true;
-
-        } else {
+        if (option != "2") {
             std::cout << "Enter GitHub token or username: ";
             std::getline(std::cin, token_or_username);
             using_token = (token_or_username.length() >= 40);
