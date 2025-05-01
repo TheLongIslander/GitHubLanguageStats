@@ -9,3 +9,6 @@ json promptAndFetchRepos(std::string& identifier, bool& using_token);
 
 // Performs the actual GitHub API request to fetch repos.
 std::string fetchRepos(const std::string& identifier, bool using_token);
+
+// Exchanges an OAuth code for an access token using your GitHub app credentials.
+std::string exchangeCodeForToken(const std::string& code);

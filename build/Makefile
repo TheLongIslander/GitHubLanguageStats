@@ -371,6 +371,30 @@ src/print_sorted.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GitHubLangStats.dir/build.make CMakeFiles/GitHubLangStats.dir/src/print_sorted.cpp.s
 .PHONY : src/print_sorted.cpp.s
 
+src/pureOAuthServer.o: src/pureOAuthServer.cpp.o
+.PHONY : src/pureOAuthServer.o
+
+# target to build an object file
+src/pureOAuthServer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GitHubLangStats.dir/build.make CMakeFiles/GitHubLangStats.dir/src/pureOAuthServer.cpp.o
+.PHONY : src/pureOAuthServer.cpp.o
+
+src/pureOAuthServer.i: src/pureOAuthServer.cpp.i
+.PHONY : src/pureOAuthServer.i
+
+# target to preprocess a source file
+src/pureOAuthServer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GitHubLangStats.dir/build.make CMakeFiles/GitHubLangStats.dir/src/pureOAuthServer.cpp.i
+.PHONY : src/pureOAuthServer.cpp.i
+
+src/pureOAuthServer.s: src/pureOAuthServer.cpp.s
+.PHONY : src/pureOAuthServer.s
+
+# target to generate assembly for a file
+src/pureOAuthServer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GitHubLangStats.dir/build.make CMakeFiles/GitHubLangStats.dir/src/pureOAuthServer.cpp.s
+.PHONY : src/pureOAuthServer.cpp.s
+
 src/runTerminalMode.o: src/runTerminalMode.cpp.o
 .PHONY : src/runTerminalMode.o
 
@@ -481,6 +505,9 @@ help:
 	@echo "... src/print_sorted.o"
 	@echo "... src/print_sorted.i"
 	@echo "... src/print_sorted.s"
+	@echo "... src/pureOAuthServer.o"
+	@echo "... src/pureOAuthServer.i"
+	@echo "... src/pureOAuthServer.s"
 	@echo "... src/runTerminalMode.o"
 	@echo "... src/runTerminalMode.i"
 	@echo "... src/runTerminalMode.s"

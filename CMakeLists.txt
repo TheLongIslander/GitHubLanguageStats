@@ -52,6 +52,7 @@ set(SOURCES
     src/utils.cpp
     src/print_sorted.cpp
     src/oauthserver.cpp
+    src/pureOAuthServer.cpp
 )
 
 set(HEADERS
@@ -65,6 +66,7 @@ set(HEADERS
     h/utils.hpp
     h/print_sorted.hpp
     h/oauthserver.hpp
+    h/pureOAuthServer.hpp
 )
 
 # ========================

@@ -21,7 +21,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
 }
 
 QString getClientSecret() {
-    QByteArray encoded = "BkQfXCgARmUBAUJKVHhWEGdXUENbZUVQeFcfRVUBMEtVLgRPFlZTNg==";  // example from Python script
+    QByteArray encoded = "BkQfXCgARmUBAUJKVHhWEGdXUENbZUVQeFcfRVUBMEtVLgRPFlZTNg==";  
     QByteArray combined = QByteArray::fromBase64(encoded);
 
     int mid = combined.size() / 2;
