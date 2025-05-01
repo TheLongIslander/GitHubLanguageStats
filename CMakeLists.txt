@@ -18,7 +18,7 @@ find_package(nlohmann_json REQUIRED)
 # ========================
 # Qt6 GUI support
 # ========================
-find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network WebEngineWidgets)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -81,6 +81,7 @@ target_link_libraries(GitHubLangStats
     nlohmann_json::nlohmann_json
     Qt6::Widgets
     Qt6::Network
+    Qt6::WebEngineWidgets
 )
 
 

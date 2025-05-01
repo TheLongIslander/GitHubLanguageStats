@@ -20,6 +20,7 @@
 #include <QMessageBox>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
 #include <filesystem>
 #include <git2.h>
 
@@ -37,10 +38,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     inputField = new QLineEdit(this);
     goButton = new QPushButton("Go", this);
     loginButton = new QPushButton("Login with GitHub", this);
+    loginStatusLabel = new QLabel(this);
+    loginStatusLabel->setStyleSheet("color: green;");
+    loginStatusLabel->setVisible(false);
 
     leftLayout->addWidget(inputField);
     leftLayout->addWidget(goButton);
     leftLayout->addWidget(loginButton);
+    leftLayout->addWidget(loginStatusLabel);
     leftLayout->addStretch();
 
     resultArea = new QTextEdit(this);
@@ -51,8 +56,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     setCentralWidget(central);
     resize(1000, 600);
 
-    connect(goButton, &QPushButton::clicked, this, &MainWindow::startWorkerThread);
-    connect(inputField, &QLineEdit::returnPressed, this, &MainWindow::startWorkerThread);
+    connect(goButton, &QPushButton::clicked, this, [this]() {
+        startWorkerThread(inputField->text());
+    });
+
+    connect(inputField, &QLineEdit::returnPressed, this, [this]() {
+        startWorkerThread(inputField->text());
+    });
+
     connect(loginButton, &QPushButton::clicked, this, &MainWindow::startGitHubLogin);
 }
 
@@ -60,11 +71,11 @@ MainWindow::~MainWindow() {
     git_libgit2_shutdown();
 }
 
-void MainWindow::startWorkerThread() {
+void MainWindow::startWorkerThread(const QString& token) {
     resultArea->clear();
 
     QThread* thread = new QThread;
-    Worker* worker = new Worker(inputField->text(), resultArea);
+    Worker* worker = new Worker(token, resultArea);
     worker->moveToThread(thread);
 
     connect(thread, &QThread::started, worker, &Worker::run);
@@ -105,7 +116,7 @@ void MainWindow::startGitHubLogin() {
 
 void MainWindow::handleOAuthCode(const QString& code) {
     const QString clientId = "Ov23liVQ3EBVLbcP681k";
-    QString clientSecret = getClientSecret();  // Securely decoded from utils
+    QString clientSecret = getClientSecret();
 
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
 
@@ -122,7 +133,7 @@ void MainWindow::handleOAuthCode(const QString& code) {
 
     QNetworkReply* reply = manager->post(request, params.toString(QUrl::FullyEncoded).toUtf8());
 
-    connect(reply, &QNetworkReply::finished, [this, reply]() {
+    connect(reply, &QNetworkReply::finished, [this, reply, manager]() {
         QByteArray response = reply->readAll();
         reply->deleteLater();
 
@@ -131,8 +142,28 @@ void MainWindow::handleOAuthCode(const QString& code) {
         QString accessToken = obj["access_token"].toString();
 
         if (!accessToken.isEmpty()) {
-            inputField->setText(accessToken);
-            startWorkerThread();
+            QNetworkRequest userRequest(QUrl("https://api.github.com/user"));
+            userRequest.setRawHeader("Authorization", "Bearer " + accessToken.toUtf8());
+            userRequest.setRawHeader("User-Agent", "GitHubLangStatsApp");
+
+            QNetworkReply* userReply = manager->get(userRequest);
+
+            connect(userReply, &QNetworkReply::finished, [this, userReply, accessToken]() {
+                QByteArray userResponse = userReply->readAll();
+                userReply->deleteLater();
+
+                QJsonDocument userDoc = QJsonDocument::fromJson(userResponse);
+                QJsonObject userObj = userDoc.object();
+                QString username = userObj["login"].toString();
+
+                if (!username.isEmpty()) {
+                    loginStatusLabel->setText("Logged in as " + username);
+                    loginStatusLabel->setVisible(true);
+                    startWorkerThread(accessToken);  // ✅ Trigger analysis
+                } else {
+                    QMessageBox::warning(this, "Error", "Failed to fetch GitHub username.");
+                }
+            });
         } else {
             QMessageBox::warning(this, "Error", "Failed to retrieve GitHub token.");
         }

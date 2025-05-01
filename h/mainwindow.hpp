@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QLabel>
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -14,7 +15,7 @@ public:
     ~MainWindow();
 
 private Q_SLOTS:
-    void startWorkerThread();                        // Launches the background thread
+    void startWorkerThread(const QString& token);    // Launch with token (manual or OAuth)
     void appendLog(const QString& message);          // Updates output live from thread
     void replaceWithFinalResult(const QString& summary); // Replaces logs with final result
     void startGitHubLogin();                         // Opens GitHub login page
@@ -23,8 +24,9 @@ private Q_SLOTS:
 private:
     QLineEdit* inputField;
     QPushButton* goButton;
-    QPushButton* loginButton;  // NEW: "Login with GitHub" button
+    QPushButton* loginButton;
     QTextEdit* resultArea;
+    QLabel* loginStatusLabel;
 };
 
 #endif // MAINWINDOW_HPP
