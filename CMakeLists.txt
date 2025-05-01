@@ -18,7 +18,7 @@ find_package(nlohmann_json REQUIRED)
 # ========================
 # Qt6 GUI support
 # ========================
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
@@ -51,6 +51,7 @@ set(SOURCES
     src/globals.cpp
     src/utils.cpp
     src/print_sorted.cpp
+    src/oauthserver.cpp
 )
 
 set(HEADERS
@@ -63,6 +64,7 @@ set(HEADERS
     h/globals.hpp
     h/utils.hpp
     h/print_sorted.hpp
+    h/oauthserver.hpp
 )
 
 # ========================
@@ -78,6 +80,7 @@ target_link_libraries(GitHubLangStats
     ${LIBCURL_LIBRARIES}
     nlohmann_json::nlohmann_json
     Qt6::Widgets
+    Qt6::Network
 )
 
 

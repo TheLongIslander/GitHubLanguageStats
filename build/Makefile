@@ -323,6 +323,30 @@ src/mainwindow.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GitHubLangStats.dir/build.make CMakeFiles/GitHubLangStats.dir/src/mainwindow.cpp.s
 .PHONY : src/mainwindow.cpp.s
 
+src/oauthserver.o: src/oauthserver.cpp.o
+.PHONY : src/oauthserver.o
+
+# target to build an object file
+src/oauthserver.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GitHubLangStats.dir/build.make CMakeFiles/GitHubLangStats.dir/src/oauthserver.cpp.o
+.PHONY : src/oauthserver.cpp.o
+
+src/oauthserver.i: src/oauthserver.cpp.i
+.PHONY : src/oauthserver.i
+
+# target to preprocess a source file
+src/oauthserver.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GitHubLangStats.dir/build.make CMakeFiles/GitHubLangStats.dir/src/oauthserver.cpp.i
+.PHONY : src/oauthserver.cpp.i
+
+src/oauthserver.s: src/oauthserver.cpp.s
+.PHONY : src/oauthserver.s
+
+# target to generate assembly for a file
+src/oauthserver.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GitHubLangStats.dir/build.make CMakeFiles/GitHubLangStats.dir/src/oauthserver.cpp.s
+.PHONY : src/oauthserver.cpp.s
+
 src/print_sorted.o: src/print_sorted.cpp.o
 .PHONY : src/print_sorted.o
 
@@ -451,6 +475,9 @@ help:
 	@echo "... src/mainwindow.o"
 	@echo "... src/mainwindow.i"
 	@echo "... src/mainwindow.s"
+	@echo "... src/oauthserver.o"
+	@echo "... src/oauthserver.i"
+	@echo "... src/oauthserver.s"
 	@echo "... src/print_sorted.o"
 	@echo "... src/print_sorted.i"
 	@echo "... src/print_sorted.s"

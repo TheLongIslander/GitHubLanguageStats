@@ -6,11 +6,20 @@
 #include "globals.hpp"
 #include "print_sorted.hpp"
 #include "utils.hpp"
+#include "oauthserver.hpp"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QWidget>
 #include <QThread>
+#include <QDesktopServices>
+#include <QUrlQuery>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <filesystem>
 #include <git2.h>
 
@@ -27,9 +36,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     inputField = new QLineEdit(this);
     goButton = new QPushButton("Go", this);
+    loginButton = new QPushButton("Login with GitHub", this);
 
     leftLayout->addWidget(inputField);
     leftLayout->addWidget(goButton);
+    leftLayout->addWidget(loginButton);
     leftLayout->addStretch();
 
     resultArea = new QTextEdit(this);
@@ -42,7 +53,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     connect(goButton, &QPushButton::clicked, this, &MainWindow::startWorkerThread);
     connect(inputField, &QLineEdit::returnPressed, this, &MainWindow::startWorkerThread);
-
+    connect(loginButton, &QPushButton::clicked, this, &MainWindow::startGitHubLogin);
 }
 
 MainWindow::~MainWindow() {
@@ -50,11 +61,10 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::startWorkerThread() {
-    resultArea->clear();  // Clear before new run starts
+    resultArea->clear();
 
     QThread* thread = new QThread;
     Worker* worker = new Worker(inputField->text(), resultArea);
-
     worker->moveToThread(thread);
 
     connect(thread, &QThread::started, worker, &Worker::run);
@@ -74,4 +84,57 @@ void MainWindow::appendLog(const QString& message) {
 void MainWindow::replaceWithFinalResult(const QString& summary) {
     resultArea->clear();
     resultArea->setPlainText(summary);
+}
+
+void MainWindow::startGitHubLogin() {
+    const QString clientId = "Ov23liVQ3EBVLbcP681k";
+    QUrl loginUrl("https://github.com/login/oauth/authorize");
+
+    QUrlQuery query;
+    query.addQueryItem("client_id", clientId);
+    query.addQueryItem("scope", "repo");
+    query.addQueryItem("redirect_uri", "http://localhost:8000/callback");
+    loginUrl.setQuery(query);
+
+    QDesktopServices::openUrl(loginUrl);
+
+    OAuthServer* server = new OAuthServer(this);
+    connect(server, &OAuthServer::receivedCode, this, &MainWindow::handleOAuthCode);
+    server->start();
+}
+
+void MainWindow::handleOAuthCode(const QString& code) {
+    const QString clientId = "Ov23liVQ3EBVLbcP681k";
+    QString clientSecret = getClientSecret();  // Securely decoded from utils
+
+    QNetworkAccessManager* manager = new QNetworkAccessManager(this);
+
+    QUrl url("https://github.com/login/oauth/access_token");
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    request.setRawHeader("Accept", "application/json");
+
+    QUrlQuery params;
+    params.addQueryItem("client_id", clientId);
+    params.addQueryItem("client_secret", clientSecret);
+    params.addQueryItem("code", code);
+    params.addQueryItem("redirect_uri", "http://localhost:8000/callback");
+
+    QNetworkReply* reply = manager->post(request, params.toString(QUrl::FullyEncoded).toUtf8());
+
+    connect(reply, &QNetworkReply::finished, [this, reply]() {
+        QByteArray response = reply->readAll();
+        reply->deleteLater();
+
+        QJsonDocument doc = QJsonDocument::fromJson(response);
+        QJsonObject obj = doc.object();
+        QString accessToken = obj["access_token"].toString();
+
+        if (!accessToken.isEmpty()) {
+            inputField->setText(accessToken);
+            startWorkerThread();
+        } else {
+            QMessageBox::warning(this, "Error", "Failed to retrieve GitHub token.");
+        }
+    });
 }
